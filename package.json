@@ -4,6 +4,7 @@
   "description": "Client for restr stack",
   "author": "jannes-io",
   "license": "MIT",
+  "repository": "https://github.com/rest-r/restr-client",
   "scripts": {
     "build": "rollup -c",
     "test": "jest",
