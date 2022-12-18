@@ -1,0 +1,16 @@
+name: Code validation
+run-name: Code validation
+on: [push]
+jobs:
+  code-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 'latest'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
