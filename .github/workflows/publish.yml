@@ -1,8 +1,9 @@
-name: Code validation
-run-name: Code validation
-on: [push]
+name: Publish to npmjs
+on:
+  release:
+    types: [created]
 jobs:
-  code-validation:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -10,7 +11,8 @@ jobs:
         with:
           node-version: 'latest'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: npm run lint
-      - run: npm run test
+      - run: npm ci
       - run: npm run build
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
