@@ -1,0 +1,11 @@
+name: Code validation
+run-name: Code validation
+on: [push]
+jobs:
+  code-validation:
+    runs-on: node-latest
+    steps:
+      - run: npm install
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
