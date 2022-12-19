@@ -1,6 +1,6 @@
 {
   "name": "@restr/client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Client for restr stack",
   "author": "jannes-io",
   "license": "MIT",
