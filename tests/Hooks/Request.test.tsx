@@ -1,9 +1,9 @@
-import MockAdapter from 'axios-mock-adapter';
 import React from 'react';
+import MockAdapter from 'axios-mock-adapter';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event'
-import { ApiClientProvider, useLazyRequest, useRequest } from '../../src';
 import { create } from 'apisauce';
+import { ApiClientProvider, useLazyRequest, useRequest } from '../../src';
 
 const api = create({ baseURL: 'https://example.org' });
 const axiosMock = new MockAdapter(api.axiosInstance, { delayResponse: 50 });
@@ -16,10 +16,10 @@ const MockApp: React.FC<React.PropsWithChildren> = ({ children }) => {
 
 axiosMock.onGet('/lazy-request').reply(200, { ret: 'bread' });
 const LazyRequest: React.FC = () => {
-  const { result, refetch } = useLazyRequest<any>({ method: 'get', path: '/lazy-request' });
+  const { result, execute } = useLazyRequest<any>('get', '/lazy-request');
 
   return <div>
-    <button onClick={() => refetch()}>Perform request</button>
+    <button onClick={() => execute()}>Perform request</button>
     <p>{result.loading ? 'loading' : 'not loading'}</p>
     <p>{result.data?.ret || 'not called'}</p>
   </div>;
@@ -27,7 +27,7 @@ const LazyRequest: React.FC = () => {
 
 axiosMock.onGet('/request').reply(200, { ret: 'butter' });
 const Request: React.FC = () => {
-  const { data, loading } = useRequest<any>({ method: 'get', path: '/request' });
+  const { data, loading } = useRequest<any>('get', '/request');
 
   return <div>
     <p>{loading ? 'loading' : 'not loading'}</p>

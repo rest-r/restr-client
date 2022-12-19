@@ -1,11 +1,9 @@
-import { useCallback, useContext, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { ApiClientContext } from '../Containers';
 
 export type Method = 'get' | 'delete' | 'head' | 'post' | 'put' | 'patch' | 'link' | 'unlink';
 
 export interface QueryParams<T> {
-  method: Method;
-  path: string;
   body?: any;
   headers?: object;
   lazy?: boolean;
@@ -16,6 +14,17 @@ export interface QueryResult<T> {
   data: T | undefined;
   loading: boolean;
   error: string | undefined;
+}
+
+export type Refetch<T> = (newParameters?: Partial<QueryParams<T>>) => void;
+
+export interface Response<T> extends QueryResult<T> {
+  refetch: Refetch<T>;
+}
+
+export interface LazyResponse<T> {
+  execute: Refetch<T>;
+  result: Response<T>;
 }
 
 export const isObj = (o: any): o is object => o !== null && typeof o === 'object';
@@ -53,21 +62,18 @@ const useDeepEqMemo = <TKey, TVal>(fn: () => TVal, key: TKey) => {
   return ref.current.value;
 };
 
-export interface LazyResponse<T> {
-  result: QueryResult<T>;
-  refetch: (newParameters?: Partial<QueryParams<T>>) => void;
-}
-
 export const useLazyRequest = <TResult>(
-  parameters: QueryParams<TResult>,
+  method: Method,
+  path: string,
+  parameters?: QueryParams<TResult>,
 ): LazyResponse<TResult> => {
   const { client } = useContext(ApiClientContext);
 
-  const [params, setParams] = useState(parameters);
+  const [params, setParams] = useState(parameters || {});
   const [executeCount, forceUpdate] = useReducer((x) => x + 1, 0);
   const [qResult, setQResult] = useState<QueryResult<TResult>>({
     data: undefined,
-    loading: !(parameters.lazy === undefined ? true : parameters.lazy),
+    loading: !(parameters?.lazy === undefined ? true : parameters.lazy),
     error: undefined,
   });
 
@@ -92,7 +98,7 @@ export const useLazyRequest = <TResult>(
     queryResult.loading = true;
     setQResult({ ...queryResult });
 
-    const { method, path, body, headers } = params;
+    const { body, headers } = params;
     client[method]<TResult>(path, body || {}, { headers })
       .then((res) => {
         queryResult.loading = false;
@@ -114,22 +120,26 @@ export const useLazyRequest = <TResult>(
     return queryResult;
   }, { params, executeCount });
 
-  return { refetch, result: qResult };
+  return useMemo(() => ({
+    execute: refetch,
+    result: { refetch, ...qResult },
+  }), [refetch, qResult]);
 };
 
-export interface Response<ResultType> extends QueryResult<ResultType> {
-  refetch: (newParameters?: Partial<QueryParams<ResultType>>) => void
-}
-
-export const useRequest = <T>(parameters: QueryParams<T>): Response<T> => {
-  if (parameters.lazy) {
+export const useRequest = <TResult>(
+  method: Method,
+  path: string,
+  parameters?: QueryParams<TResult>,
+): Response<TResult> => {
+  const qParams = parameters || {};
+  if (qParams.lazy) {
     console.warn('Do not set "lazy" yourself, if you need a lazy request, use "useLazyRequest" instead!');
   }
-  const { refetch, result } = useLazyRequest<T>({ ...parameters, lazy: false });
+  const { execute, result } = useLazyRequest<TResult>(method, path, { ...qParams, lazy: false });
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    execute();
+  }, [execute]);
 
-  return { ...result, refetch };
+  return result;
 };
